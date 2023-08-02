@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    environment:
+      - cluster.name=elasticsearch-cluster
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "9280:9280"
+    volumes:
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  nodejs:
+    build:
+      context: .
+      dockerfile: ./src/gateway-api/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - nginx
+
+  opensearch:
+    image: opensearchproject/opensearch:2.9.0
+    environment:
+      - cluster.name=opensearch-cluster
+      - discovery.type=single-node
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./conf/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+    depends_on:
+      - nodejs
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.10
+    volumes:
+      - ./conf/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    environment:
+      - "ES_HOST=opensearch:8200"
+      - "ES_INDEX=sample-log"
+    depends_on:
+      - elasticsearch
+      - opensearch
