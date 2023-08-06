@@ -40,12 +40,14 @@ services:
       - nodejs
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:7.17.10
+    # image: docker.elastic.co/logstash/logstash:7.17.10
+    image: opensearchproject/logstash-oss-with-opensearch-output-plugin:8.6.1
     volumes:
       - ./conf/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
     environment:
       - "ES_HOST=opensearch:8200"
       - "ES_INDEX=sample-log"
+      - "LS_JAVA_OPTS=-Dlog.level=debug"
     depends_on:
       - elasticsearch
       - opensearch
